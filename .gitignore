@@ -1,0 +1,4 @@
+.playwright-mcp/
+model-sheet-cutter-*.png
+*.log
+*.tmp

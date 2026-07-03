@@ -1,0 +1,8 @@
+.git
+.github
+k8s
+README.md
+*.log
+*.tmp
+.playwright-mcp
+model-sheet-cutter-*.png

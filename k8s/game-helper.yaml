@@ -1,0 +1,84 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: game-helper
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: game-helper
+  namespace: game-helper
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app: game-helper
+  template:
+    metadata:
+      labels:
+        app: game-helper
+    spec:
+      imagePullSecrets:
+        - name: ghcr-secret
+      containers:
+        - name: game-helper
+          image: ghcr.io/josecldjr/game-helper:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 80
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 128Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: game-helper
+  namespace: game-helper
+spec:
+  type: ClusterIP
+  selector:
+    app: game-helper
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: game-helper
+  namespace: game-helper
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: game-helper.ne-xxi.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: game-helper
+                port:
+                  number: 80

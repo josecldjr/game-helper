@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Model Sheet Cutter</title>
+    <link rel="icon" href="data:," />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="./styles.css?v=2" />
+  </head>
+  <body class="min-h-screen bg-neutral-100 text-neutral-950">
+    <main class="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-5 px-4 py-5 sm:px-6 lg:px-8">
+      <header class="flex flex-col gap-4 border-b border-neutral-300 pb-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 class="text-2xl font-semibold tracking-normal text-neutral-950">Model Sheet Cutter</h1>
+          <p id="imageMeta" class="mt-1 text-sm text-neutral-600">No image loaded</p>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2">
+          <label
+            class="relative inline-flex h-10 cursor-pointer items-center justify-center overflow-hidden rounded-md bg-neutral-950 px-4 text-sm font-medium text-white transition hover:bg-neutral-800 focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-neutral-950"
+          >
+            <span>Choose image</span>
+            <input id="fileInput" class="absolute inset-0 cursor-pointer opacity-0" type="file" accept="image/*" aria-label="Choose image" />
+          </label>
+          <button
+            id="loadExampleButton"
+            type="button"
+            class="inline-flex h-10 items-center justify-center rounded-md border border-neutral-300 bg-white px-4 text-sm font-medium text-neutral-900 transition hover:bg-neutral-50 focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-neutral-500"
+          >
+            Example
+          </button>
+          <button
+            id="resetButton"
+            type="button"
+            class="inline-flex h-10 items-center justify-center rounded-md border border-neutral-300 bg-white px-4 text-sm font-medium text-neutral-900 transition hover:bg-neutral-50 focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-neutral-500"
+          >
+            Reset
+          </button>
+          <button
+            id="cutButton"
+            type="button"
+            disabled
+            class="inline-flex h-10 items-center justify-center rounded-md bg-emerald-700 px-4 text-sm font-semibold text-white transition hover:bg-emerald-800 focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-emerald-700 disabled:cursor-not-allowed disabled:bg-neutral-300 disabled:text-neutral-500"
+          >
+            Cut
+          </button>
+        </div>
+      </header>
+
+      <section
+        id="dropZone"
+        class="flex min-h-[360px] flex-1 flex-col rounded-lg border-2 border-dashed border-neutral-300 bg-white p-3 transition sm:p-4"
+      >
+        <div id="emptyState" class="grid flex-1 place-items-center text-center">
+          <div class="max-w-sm">
+            <div class="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-full bg-cyan-100 text-2xl text-cyan-900">+</div>
+            <p class="text-base font-medium text-neutral-950">Drop an image here</p>
+            <p class="mt-1 text-sm text-neutral-600">or use the image picker above</p>
+          </div>
+        </div>
+
+        <div id="workspace" class="hidden flex-1 flex-col gap-4">
+          <div id="imageStage" class="image-stage">
+            <div id="imageFrame" class="image-frame">
+              <img id="sourceImage" alt="Loaded image for slicing" class="source-image" draggable="false" />
+
+              <button
+                id="markerA"
+                type="button"
+                class="marker marker-a"
+                role="slider"
+                aria-label="Marker A"
+                aria-valuemin="0"
+                aria-valuemax="100"
+                aria-valuenow="33"
+              >
+                <span>A</span>
+              </button>
+
+              <button
+                id="markerB"
+                type="button"
+                class="marker marker-b"
+                role="slider"
+                aria-label="Marker B"
+                aria-valuemin="0"
+                aria-valuemax="100"
+                aria-valuenow="67"
+              >
+                <span>B</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="grid gap-3 rounded-lg border border-neutral-200 bg-neutral-50 p-3 md:grid-cols-[1fr_1fr_auto] md:items-end">
+            <label class="grid gap-2 text-sm font-medium text-neutral-700">
+              Marker A
+              <input id="rangeA" class="accent-cyan-700" type="range" min="0" max="1000" step="1" value="333" />
+            </label>
+
+            <label class="grid gap-2 text-sm font-medium text-neutral-700">
+              Marker B
+              <input id="rangeB" class="accent-amber-600" type="range" min="0" max="1000" step="1" value="667" />
+            </label>
+
+            <div class="rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-700">
+              <span id="markerReadout">A: 33% · B: 67%</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="rounded-lg border border-neutral-300 bg-white p-3 sm:p-4">
+        <div class="mb-3 flex items-center justify-between gap-3">
+          <h2 class="text-base font-semibold text-neutral-950">Slices</h2>
+          <span id="resultCount" class="rounded-full bg-neutral-100 px-3 py-1 text-xs font-medium text-neutral-600">0 images</span>
+        </div>
+
+        <div id="resultsEmpty" class="grid min-h-40 place-items-center rounded-md border border-neutral-200 bg-neutral-50 text-sm text-neutral-500">
+          Slices will appear here
+        </div>
+
+        <div id="resultsScroll" class="hidden gap-3 overflow-x-auto pb-2"></div>
+      </section>
+    </main>
+
+    <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true">Image sliced</div>
+
+    <script src="./script.js"></script>
+  </body>
+</html>
