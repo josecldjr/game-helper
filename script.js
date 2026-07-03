@@ -20,6 +20,14 @@ const elements = {
   xMarkerB: document.querySelector("#xMarkerB"),
   yMarkerA: document.querySelector("#yMarkerA"),
   yMarkerB: document.querySelector("#yMarkerB"),
+  xMarkerAControl: document.querySelector("#xMarkerAControl"),
+  xMarkerBControl: document.querySelector("#xMarkerBControl"),
+  yMarkerAControl: document.querySelector("#yMarkerAControl"),
+  yMarkerBControl: document.querySelector("#yMarkerBControl"),
+  xMarkerAToggle: document.querySelector("#xMarkerAToggle"),
+  xMarkerBToggle: document.querySelector("#xMarkerBToggle"),
+  yMarkerAToggle: document.querySelector("#yMarkerAToggle"),
+  yMarkerBToggle: document.querySelector("#yMarkerBToggle"),
   xRangeA: document.querySelector("#xRangeA"),
   xRangeB: document.querySelector("#xRangeB"),
   yRangeA: document.querySelector("#yRangeA"),
@@ -40,6 +48,10 @@ const state = {
   naturalHeight: 0,
   horizontalCut: true,
   verticalCut: false,
+  xMarkerAEnabled: true,
+  xMarkerBEnabled: true,
+  yMarkerAEnabled: true,
+  yMarkerBEnabled: true,
   xMarkerA: 1 / 3,
   xMarkerB: 2 / 3,
   yMarkerA: 1 / 3,
@@ -56,8 +68,14 @@ const axisConfig = {
     orientation: "horizontal",
     markerAKey: "xMarkerA",
     markerBKey: "xMarkerB",
+    markerAEnabledKey: "xMarkerAEnabled",
+    markerBEnabledKey: "xMarkerBEnabled",
     markerAElement: elements.xMarkerA,
     markerBElement: elements.xMarkerB,
+    markerAControlElement: elements.xMarkerAControl,
+    markerBControlElement: elements.xMarkerBControl,
+    markerAToggleElement: elements.xMarkerAToggle,
+    markerBToggleElement: elements.xMarkerBToggle,
     rangeAElement: elements.xRangeA,
     rangeBElement: elements.xRangeB,
     controlsElement: elements.xControls,
@@ -71,8 +89,14 @@ const axisConfig = {
     orientation: "vertical",
     markerAKey: "yMarkerA",
     markerBKey: "yMarkerB",
+    markerAEnabledKey: "yMarkerAEnabled",
+    markerBEnabledKey: "yMarkerBEnabled",
     markerAElement: elements.yMarkerA,
     markerBElement: elements.yMarkerB,
+    markerAControlElement: elements.yMarkerAControl,
+    markerBControlElement: elements.yMarkerBControl,
+    markerAToggleElement: elements.yMarkerAToggle,
+    markerBToggleElement: elements.yMarkerBToggle,
     rangeAElement: elements.yRangeA,
     rangeBElement: elements.yRangeB,
     controlsElement: elements.yControls,
@@ -112,7 +136,9 @@ function normalizeAxisMarker(axis, which, rawValue) {
 
 function updateAxisControls(axis) {
   const config = axisConfig[axis];
-  const enabled = state[config.enabledKey];
+  const axisEnabled = state[config.enabledKey];
+  const markerAEnabled = axisEnabled && state[config.markerAEnabledKey];
+  const markerBEnabled = axisEnabled && state[config.markerBEnabledKey];
   const markerA = state[config.markerAKey];
   const markerB = state[config.markerBKey];
   const markerAPercent = formatPercent(markerA);
@@ -120,19 +146,27 @@ function updateAxisControls(axis) {
   const markerAPx = Math.round(markerA * getAxisSize(axis));
   const markerBPx = Math.round(markerB * getAxisSize(axis));
 
-  config.toggleElement.checked = enabled;
-  config.controlsElement.classList.toggle("opacity-60", !enabled);
-  config.markerAElement.classList.toggle("is-hidden", !enabled);
-  config.markerBElement.classList.toggle("is-hidden", !enabled);
-  config.rangeAElement.disabled = !enabled;
-  config.rangeBElement.disabled = !enabled;
+  config.toggleElement.checked = axisEnabled;
+  config.markerAToggleElement.checked = state[config.markerAEnabledKey];
+  config.markerBToggleElement.checked = state[config.markerBEnabledKey];
+  config.controlsElement.classList.toggle("opacity-60", !axisEnabled);
+  config.markerAControlElement.classList.toggle("opacity-50", !markerAEnabled);
+  config.markerBControlElement.classList.toggle("opacity-50", !markerBEnabled);
+  config.markerAElement.classList.toggle("is-hidden", !markerAEnabled);
+  config.markerBElement.classList.toggle("is-hidden", !markerBEnabled);
+  config.markerAToggleElement.disabled = !axisEnabled;
+  config.markerBToggleElement.disabled = !axisEnabled;
+  config.rangeAElement.disabled = !markerAEnabled;
+  config.rangeBElement.disabled = !markerBEnabled;
   config.rangeAElement.value = Math.round(markerA * 1000);
   config.rangeBElement.value = Math.round(markerB * 1000);
   config.markerAElement.setAttribute("aria-valuenow", Math.round(markerA * 100));
   config.markerBElement.setAttribute("aria-valuenow", Math.round(markerB * 100));
   config.markerAElement.setAttribute("aria-orientation", config.orientation);
   config.markerBElement.setAttribute("aria-orientation", config.orientation);
-  config.readoutElement.textContent = `${config.axisLabel} A: ${markerAPercent} (${markerAPx}px) · ${config.axisLabel} B: ${markerBPercent} (${markerBPx}px)`;
+  const markerAReadout = state[config.markerAEnabledKey] ? `${markerAPercent} (${markerAPx}px)` : "off";
+  const markerBReadout = state[config.markerBEnabledKey] ? `${markerBPercent} (${markerBPx}px)` : "off";
+  config.readoutElement.textContent = `${config.axisLabel} A: ${markerAReadout} · ${config.axisLabel} B: ${markerBReadout}`;
 
   if (axis === "x") {
     config.markerAElement.style.left = markerAPercent;
@@ -160,11 +194,24 @@ function setAxisMarker(axis, which, value) {
   updateControls();
 }
 
+function setAxisMarkerEnabled(axis, which, enabled) {
+  const config = axisConfig[axis];
+  const enabledKey = which === "a" ? config.markerAEnabledKey : config.markerBEnabledKey;
+
+  state[enabledKey] = enabled;
+  clearResults();
+  updateControls();
+}
+
 function resetMarkers() {
   state.xMarkerA = 1 / 3;
   state.xMarkerB = 2 / 3;
   state.yMarkerA = 1 / 3;
   state.yMarkerB = 2 / 3;
+  state.xMarkerAEnabled = true;
+  state.xMarkerBEnabled = true;
+  state.yMarkerAEnabled = true;
+  state.yMarkerBEnabled = true;
   updateControls();
 }
 
@@ -306,14 +353,19 @@ function getAxisSegments(axis) {
     return [{ start: 0, size: axisSize, index: 1 }];
   }
 
-  const cutA = Math.round(state[config.markerAKey] * axisSize);
-  const cutB = Math.round(state[config.markerBKey] * axisSize);
+  const cuts = [
+    state[config.markerAEnabledKey] ? Math.round(state[config.markerAKey] * axisSize) : null,
+    state[config.markerBEnabledKey] ? Math.round(state[config.markerBKey] * axisSize) : null,
+  ]
+    .filter((cut) => cut !== null)
+    .sort((left, right) => left - right);
+  const boundaries = [0, ...cuts, axisSize];
 
-  return [
-    { start: 0, size: cutA, index: 1 },
-    { start: cutA, size: cutB - cutA, index: 2 },
-    { start: cutB, size: axisSize - cutB, index: 3 },
-  ].filter((segment) => segment.size > 0);
+  return boundaries.slice(0, -1).map((start, index) => ({
+    start,
+    size: boundaries[index + 1] - start,
+    index: index + 1,
+  })).filter((segment) => segment.size > 0);
 }
 
 function createCropCard(segment, index, modeName) {
@@ -413,6 +465,8 @@ function bindAxisEvents(axis) {
   const config = axisConfig[axis];
 
   config.toggleElement.addEventListener("change", (event) => setAxisEnabled(axis, event.target.checked));
+  config.markerAToggleElement.addEventListener("change", (event) => setAxisMarkerEnabled(axis, "a", event.target.checked));
+  config.markerBToggleElement.addEventListener("change", (event) => setAxisMarkerEnabled(axis, "b", event.target.checked));
   config.rangeAElement.addEventListener("input", (event) => setAxisMarker(axis, "a", Number(event.target.value) / 1000));
   config.rangeBElement.addEventListener("input", (event) => setAxisMarker(axis, "b", Number(event.target.value) / 1000));
   config.markerAElement.addEventListener("pointerdown", (event) => startDrag(axis, "a", event));

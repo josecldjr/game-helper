@@ -7,6 +7,7 @@ A small static tool for slicing a horizontal model sheet into three PNG images.
 - Load an image by drag and drop or file picker.
 - Move independent X and Y cut markers over the image.
 - Enable horizontal cut, vertical cut, or both axes at once.
+- Enable or disable each individual marker.
 - Generate slices into horizontally scrollable cards.
 - Download each slice as a PNG.
 - Non-blocking side notification after slicing.

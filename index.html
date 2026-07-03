@@ -28,7 +28,7 @@
     <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
     <link rel="manifest" href="./site.webmanifest" />
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="./styles.css?v=4" />
+    <link rel="stylesheet" href="./styles.css?v=5" />
   </head>
   <body class="min-h-screen bg-neutral-100 text-neutral-950">
     <main class="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-5 px-4 py-5 sm:px-6 lg:px-8">
@@ -159,13 +159,19 @@
             </div>
 
             <div id="xControls" class="grid gap-3 rounded-md border border-neutral-200 bg-white p-3">
-              <label class="grid gap-2 text-sm font-medium text-neutral-700">
-                X marker A
+              <label id="xMarkerAControl" class="grid gap-2 text-sm font-medium text-neutral-700">
+                <span class="flex items-center gap-2">
+                  <input id="xMarkerAToggle" class="h-4 w-4 accent-cyan-700" type="checkbox" checked />
+                  X marker A
+                </span>
                 <input id="xRangeA" class="accent-cyan-700" type="range" min="0" max="1000" step="1" value="333" />
               </label>
 
-              <label class="grid gap-2 text-sm font-medium text-neutral-700">
-                X marker B
+              <label id="xMarkerBControl" class="grid gap-2 text-sm font-medium text-neutral-700">
+                <span class="flex items-center gap-2">
+                  <input id="xMarkerBToggle" class="h-4 w-4 accent-amber-600" type="checkbox" checked />
+                  X marker B
+                </span>
                 <input id="xRangeB" class="accent-amber-600" type="range" min="0" max="1000" step="1" value="667" />
               </label>
 
@@ -175,13 +181,19 @@
             </div>
 
             <div id="yControls" class="grid gap-3 rounded-md border border-neutral-200 bg-white p-3 opacity-60">
-              <label class="grid gap-2 text-sm font-medium text-neutral-700">
-                Y marker A
+              <label id="yMarkerAControl" class="grid gap-2 text-sm font-medium text-neutral-700">
+                <span class="flex items-center gap-2">
+                  <input id="yMarkerAToggle" class="h-4 w-4 accent-emerald-700" type="checkbox" checked disabled />
+                  Y marker A
+                </span>
                 <input id="yRangeA" class="accent-emerald-700" type="range" min="0" max="1000" step="1" value="333" disabled />
               </label>
 
-              <label class="grid gap-2 text-sm font-medium text-neutral-700">
-                Y marker B
+              <label id="yMarkerBControl" class="grid gap-2 text-sm font-medium text-neutral-700">
+                <span class="flex items-center gap-2">
+                  <input id="yMarkerBToggle" class="h-4 w-4 accent-orange-600" type="checkbox" checked disabled />
+                  Y marker B
+                </span>
                 <input id="yRangeB" class="accent-orange-600" type="range" min="0" max="1000" step="1" value="667" disabled />
               </label>
 
@@ -209,6 +221,6 @@
 
     <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true">Image sliced</div>
 
-    <script src="./script.js?v=3"></script>
+    <script src="./script.js?v=4"></script>
   </body>
 </html>
