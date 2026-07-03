@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Slice a model sheet into three downloadable PNG images with adjustable horizontal or vertical markers." />
+    <meta name="description" content="Slice a model sheet into downloadable PNG images with adjustable markers on one or both axes." />
     <meta name="application-name" content="Model Sheet Cutter" />
     <meta name="author" content="Jose Carvalho" />
     <meta name="robots" content="index, follow" />
@@ -13,13 +13,13 @@
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Model Sheet Cutter" />
     <meta property="og:title" content="Model Sheet Cutter" />
-    <meta property="og:description" content="Slice a model sheet into three downloadable PNG images with adjustable horizontal or vertical markers." />
+    <meta property="og:description" content="Slice a model sheet into downloadable PNG images with adjustable markers on one or both axes." />
     <meta property="og:url" content="https://game-helper.ne-xxi.com/" />
     <meta property="og:image" content="https://game-helper.ne-xxi.com/Gemini_Generated_Image_.png" />
 
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Model Sheet Cutter" />
-    <meta name="twitter:description" content="Slice a model sheet into three downloadable PNG images with adjustable horizontal or vertical markers." />
+    <meta name="twitter:description" content="Slice a model sheet into downloadable PNG images with adjustable markers on one or both axes." />
     <meta name="twitter:image" content="https://game-helper.ne-xxi.com/Gemini_Generated_Image_.png" />
 
     <title>Model Sheet Cutter</title>
@@ -28,7 +28,7 @@
     <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
     <link rel="manifest" href="./site.webmanifest" />
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="./styles.css?v=3" />
+    <link rel="stylesheet" href="./styles.css?v=4" />
   </head>
   <body class="min-h-screen bg-neutral-100 text-neutral-950">
     <main class="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-5 px-4 py-5 sm:px-6 lg:px-8">
@@ -88,51 +88,106 @@
               <img id="sourceImage" alt="Loaded image for slicing" class="source-image" draggable="false" />
 
               <button
-                id="markerA"
+                id="xMarkerA"
                 type="button"
-                class="marker marker-a"
+                class="marker x-marker marker-a"
                 role="slider"
-                aria-label="Marker A"
+                aria-label="Horizontal marker A"
+                aria-orientation="horizontal"
                 aria-valuemin="0"
                 aria-valuemax="100"
                 aria-valuenow="33"
               >
-                <span>A</span>
+                <span>XA</span>
               </button>
 
               <button
-                id="markerB"
+                id="xMarkerB"
                 type="button"
-                class="marker marker-b"
+                class="marker x-marker marker-b"
                 role="slider"
-                aria-label="Marker B"
+                aria-label="Horizontal marker B"
+                aria-orientation="horizontal"
                 aria-valuemin="0"
                 aria-valuemax="100"
                 aria-valuenow="67"
               >
-                <span>B</span>
+                <span>XB</span>
+              </button>
+
+              <button
+                id="yMarkerA"
+                type="button"
+                class="marker y-marker marker-c is-hidden"
+                role="slider"
+                aria-label="Vertical marker A"
+                aria-orientation="vertical"
+                aria-valuemin="0"
+                aria-valuemax="100"
+                aria-valuenow="33"
+              >
+                <span>YA</span>
+              </button>
+
+              <button
+                id="yMarkerB"
+                type="button"
+                class="marker y-marker marker-d is-hidden"
+                role="slider"
+                aria-label="Vertical marker B"
+                aria-orientation="vertical"
+                aria-valuemin="0"
+                aria-valuemax="100"
+                aria-valuenow="67"
+              >
+                <span>YB</span>
               </button>
             </div>
           </div>
 
-          <div class="grid gap-3 rounded-lg border border-neutral-200 bg-neutral-50 p-3 md:grid-cols-[auto_1fr_1fr_auto] md:items-end">
-            <label class="flex min-h-11 items-center gap-3 rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm font-medium text-neutral-700">
-              <input id="verticalCutToggle" class="h-4 w-4 accent-emerald-700" type="checkbox" />
-              Vertical cut
-            </label>
+          <div class="grid gap-3 rounded-lg border border-neutral-200 bg-neutral-50 p-3 lg:grid-cols-[auto_1fr_1fr] lg:items-start">
+            <div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-1">
+              <label class="flex min-h-11 items-center gap-3 rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm font-medium text-neutral-700">
+                <input id="horizontalCutToggle" class="h-4 w-4 accent-cyan-700" type="checkbox" checked />
+                Horizontal cut
+              </label>
 
-            <label class="grid gap-2 text-sm font-medium text-neutral-700">
-              Marker A
-              <input id="rangeA" class="accent-cyan-700" type="range" min="0" max="1000" step="1" value="333" />
-            </label>
+              <label class="flex min-h-11 items-center gap-3 rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm font-medium text-neutral-700">
+                <input id="verticalCutToggle" class="h-4 w-4 accent-emerald-700" type="checkbox" />
+                Vertical cut
+              </label>
+            </div>
 
-            <label class="grid gap-2 text-sm font-medium text-neutral-700">
-              Marker B
-              <input id="rangeB" class="accent-amber-600" type="range" min="0" max="1000" step="1" value="667" />
-            </label>
+            <div id="xControls" class="grid gap-3 rounded-md border border-neutral-200 bg-white p-3">
+              <label class="grid gap-2 text-sm font-medium text-neutral-700">
+                X marker A
+                <input id="xRangeA" class="accent-cyan-700" type="range" min="0" max="1000" step="1" value="333" />
+              </label>
 
-            <div class="rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-700">
-              <span id="markerReadout">A: 33% · B: 67%</span>
+              <label class="grid gap-2 text-sm font-medium text-neutral-700">
+                X marker B
+                <input id="xRangeB" class="accent-amber-600" type="range" min="0" max="1000" step="1" value="667" />
+              </label>
+
+              <div class="rounded-md border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm text-neutral-700">
+                <span id="xMarkerReadout">X A: 33% · X B: 67%</span>
+              </div>
+            </div>
+
+            <div id="yControls" class="grid gap-3 rounded-md border border-neutral-200 bg-white p-3 opacity-60">
+              <label class="grid gap-2 text-sm font-medium text-neutral-700">
+                Y marker A
+                <input id="yRangeA" class="accent-emerald-700" type="range" min="0" max="1000" step="1" value="333" disabled />
+              </label>
+
+              <label class="grid gap-2 text-sm font-medium text-neutral-700">
+                Y marker B
+                <input id="yRangeB" class="accent-orange-600" type="range" min="0" max="1000" step="1" value="667" disabled />
+              </label>
+
+              <div class="rounded-md border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm text-neutral-700">
+                <span id="yMarkerReadout">Y A: 33% · Y B: 67%</span>
+              </div>
             </div>
           </div>
         </div>
@@ -154,6 +209,6 @@
 
     <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true">Image sliced</div>
 
-    <script src="./script.js?v=2"></script>
+    <script src="./script.js?v=3"></script>
   </body>
 </html>

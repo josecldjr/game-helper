@@ -69,7 +69,7 @@ body {
   top: 0.75rem;
   left: 50%;
   display: grid;
-  width: 2rem;
+  width: 2.35rem;
   height: 2rem;
   transform: translateX(-50%);
   place-items: center;
@@ -93,7 +93,15 @@ body {
   --marker-color: rgb(217 119 6);
 }
 
-.image-frame.is-vertical-cut .marker {
+.marker-c {
+  --marker-color: rgb(5 150 105);
+}
+
+.marker-d {
+  --marker-color: rgb(234 88 12);
+}
+
+.y-marker {
   inset-inline: 0;
   bottom: auto;
   width: auto;
@@ -102,7 +110,7 @@ body {
   cursor: ns-resize;
 }
 
-.image-frame.is-vertical-cut .marker::before {
+.y-marker::before {
   inset-inline: 0;
   inset-block: auto;
   top: 50%;
@@ -112,10 +120,14 @@ body {
   transform: translateY(-50%);
 }
 
-.image-frame.is-vertical-cut .marker span {
+.y-marker span {
   top: 50%;
   left: 0.75rem;
   transform: translateY(-50%);
+}
+
+.marker.is-hidden {
+  display: none;
 }
 
 .is-dragging {

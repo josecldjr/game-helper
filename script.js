@@ -12,12 +12,20 @@ const elements = {
   imageMeta: document.querySelector("#imageMeta"),
   imageFrame: document.querySelector("#imageFrame"),
   sourceImage: document.querySelector("#sourceImage"),
-  markerA: document.querySelector("#markerA"),
-  markerB: document.querySelector("#markerB"),
-  rangeA: document.querySelector("#rangeA"),
-  rangeB: document.querySelector("#rangeB"),
+  horizontalCutToggle: document.querySelector("#horizontalCutToggle"),
   verticalCutToggle: document.querySelector("#verticalCutToggle"),
-  markerReadout: document.querySelector("#markerReadout"),
+  xControls: document.querySelector("#xControls"),
+  yControls: document.querySelector("#yControls"),
+  xMarkerA: document.querySelector("#xMarkerA"),
+  xMarkerB: document.querySelector("#xMarkerB"),
+  yMarkerA: document.querySelector("#yMarkerA"),
+  yMarkerB: document.querySelector("#yMarkerB"),
+  xRangeA: document.querySelector("#xRangeA"),
+  xRangeB: document.querySelector("#xRangeB"),
+  yRangeA: document.querySelector("#yRangeA"),
+  yRangeB: document.querySelector("#yRangeB"),
+  xMarkerReadout: document.querySelector("#xMarkerReadout"),
+  yMarkerReadout: document.querySelector("#yMarkerReadout"),
   resultsEmpty: document.querySelector("#resultsEmpty"),
   resultsScroll: document.querySelector("#resultsScroll"),
   resultCount: document.querySelector("#resultCount"),
@@ -30,11 +38,47 @@ const state = {
   objectUrl: "",
   naturalWidth: 0,
   naturalHeight: 0,
-  markerA: 1 / 3,
-  markerB: 2 / 3,
+  horizontalCut: true,
   verticalCut: false,
+  xMarkerA: 1 / 3,
+  xMarkerB: 2 / 3,
+  yMarkerA: 1 / 3,
+  yMarkerB: 2 / 3,
   dragging: null,
   toastTimer: 0,
+};
+
+const axisConfig = {
+  x: {
+    enabledKey: "horizontalCut",
+    sizeKey: "naturalWidth",
+    axisLabel: "X",
+    orientation: "horizontal",
+    markerAKey: "xMarkerA",
+    markerBKey: "xMarkerB",
+    markerAElement: elements.xMarkerA,
+    markerBElement: elements.xMarkerB,
+    rangeAElement: elements.xRangeA,
+    rangeBElement: elements.xRangeB,
+    controlsElement: elements.xControls,
+    toggleElement: elements.horizontalCutToggle,
+    readoutElement: elements.xMarkerReadout,
+  },
+  y: {
+    enabledKey: "verticalCut",
+    sizeKey: "naturalHeight",
+    axisLabel: "Y",
+    orientation: "vertical",
+    markerAKey: "yMarkerA",
+    markerBKey: "yMarkerB",
+    markerAElement: elements.yMarkerA,
+    markerBElement: elements.yMarkerB,
+    rangeAElement: elements.yRangeA,
+    rangeBElement: elements.yRangeB,
+    controlsElement: elements.yControls,
+    toggleElement: elements.verticalCutToggle,
+    readoutElement: elements.yMarkerReadout,
+  },
 };
 
 function clamp(value, min, max) {
@@ -49,73 +93,92 @@ function getBaseName(fileName) {
   return fileName.replace(/\.[^.]+$/, "").replace(/[^\w-]+/g, "-").replace(/^-+|-+$/g, "") || "slice";
 }
 
-function getActiveSize() {
-  return state.verticalCut ? state.naturalHeight : state.naturalWidth;
+function getAxisSize(axis) {
+  return state[axisConfig[axis].sizeKey];
 }
 
-function normalizeMarker(which, rawValue) {
+function normalizeAxisMarker(axis, which, rawValue) {
+  const config = axisConfig[axis];
+  const markerA = state[config.markerAKey];
+  const markerB = state[config.markerBKey];
   const value = clamp(rawValue, MIN_SEGMENT_RATIO, 1 - MIN_SEGMENT_RATIO);
 
   if (which === "a") {
-    return Math.min(value, state.markerB - MIN_SEGMENT_RATIO);
+    return Math.min(value, markerB - MIN_SEGMENT_RATIO);
   }
 
-  return Math.max(value, state.markerA + MIN_SEGMENT_RATIO);
+  return Math.max(value, markerA + MIN_SEGMENT_RATIO);
+}
+
+function updateAxisControls(axis) {
+  const config = axisConfig[axis];
+  const enabled = state[config.enabledKey];
+  const markerA = state[config.markerAKey];
+  const markerB = state[config.markerBKey];
+  const markerAPercent = formatPercent(markerA);
+  const markerBPercent = formatPercent(markerB);
+  const markerAPx = Math.round(markerA * getAxisSize(axis));
+  const markerBPx = Math.round(markerB * getAxisSize(axis));
+
+  config.toggleElement.checked = enabled;
+  config.controlsElement.classList.toggle("opacity-60", !enabled);
+  config.markerAElement.classList.toggle("is-hidden", !enabled);
+  config.markerBElement.classList.toggle("is-hidden", !enabled);
+  config.rangeAElement.disabled = !enabled;
+  config.rangeBElement.disabled = !enabled;
+  config.rangeAElement.value = Math.round(markerA * 1000);
+  config.rangeBElement.value = Math.round(markerB * 1000);
+  config.markerAElement.setAttribute("aria-valuenow", Math.round(markerA * 100));
+  config.markerBElement.setAttribute("aria-valuenow", Math.round(markerB * 100));
+  config.markerAElement.setAttribute("aria-orientation", config.orientation);
+  config.markerBElement.setAttribute("aria-orientation", config.orientation);
+  config.readoutElement.textContent = `${config.axisLabel} A: ${markerAPercent} (${markerAPx}px) · ${config.axisLabel} B: ${markerBPercent} (${markerBPx}px)`;
+
+  if (axis === "x") {
+    config.markerAElement.style.left = markerAPercent;
+    config.markerBElement.style.left = markerBPercent;
+  } else {
+    config.markerAElement.style.top = markerAPercent;
+    config.markerBElement.style.top = markerBPercent;
+  }
 }
 
 function updateControls() {
-  const markerAPercent = formatPercent(state.markerA);
-  const markerBPercent = formatPercent(state.markerB);
-  const activeSize = getActiveSize();
-  const markerAPx = Math.round(state.markerA * activeSize);
-  const markerBPx = Math.round(state.markerB * activeSize);
-  const axisLabel = state.verticalCut ? "Y" : "X";
-
-  elements.imageFrame.classList.toggle("is-vertical-cut", state.verticalCut);
-
-  if (state.verticalCut) {
-    elements.markerA.style.left = "";
-    elements.markerB.style.left = "";
-    elements.markerA.style.top = markerAPercent;
-    elements.markerB.style.top = markerBPercent;
-  } else {
-    elements.markerA.style.top = "";
-    elements.markerB.style.top = "";
-    elements.markerA.style.left = markerAPercent;
-    elements.markerB.style.left = markerBPercent;
-  }
-
-  elements.rangeA.value = Math.round(state.markerA * 1000);
-  elements.rangeB.value = Math.round(state.markerB * 1000);
-  elements.markerA.setAttribute("aria-valuenow", Math.round(state.markerA * 100));
-  elements.markerB.setAttribute("aria-valuenow", Math.round(state.markerB * 100));
-  elements.markerA.setAttribute("aria-orientation", state.verticalCut ? "vertical" : "horizontal");
-  elements.markerB.setAttribute("aria-orientation", state.verticalCut ? "vertical" : "horizontal");
-  elements.markerReadout.textContent = `${axisLabel} A: ${markerAPercent} (${markerAPx}px) · ${axisLabel} B: ${markerBPercent} (${markerBPx}px)`;
+  updateAxisControls("x");
+  updateAxisControls("y");
+  elements.cutButton.disabled = !state.naturalWidth || (!state.horizontalCut && !state.verticalCut);
 }
 
-function setMarker(which, value) {
+function setAxisMarker(axis, which, value) {
   if (!state.naturalWidth) {
     return;
   }
 
-  if (which === "a") {
-    state.markerA = normalizeMarker("a", value);
-  } else {
-    state.markerB = normalizeMarker("b", value);
-  }
-
+  const config = axisConfig[axis];
+  const markerKey = which === "a" ? config.markerAKey : config.markerBKey;
+  state[markerKey] = normalizeAxisMarker(axis, which, value);
   updateControls();
 }
 
 function resetMarkers() {
-  state.markerA = 1 / 3;
-  state.markerB = 2 / 3;
+  state.xMarkerA = 1 / 3;
+  state.xMarkerB = 2 / 3;
+  state.yMarkerA = 1 / 3;
+  state.yMarkerB = 2 / 3;
   updateControls();
 }
 
-function setCutAxis(verticalCut) {
-  state.verticalCut = verticalCut;
+function setAxisEnabled(axis, enabled) {
+  const config = axisConfig[axis];
+  const otherAxis = axis === "x" ? "y" : "x";
+  const otherConfig = axisConfig[otherAxis];
+
+  if (!enabled && !state[otherConfig.enabledKey]) {
+    config.toggleElement.checked = true;
+    return;
+  }
+
+  state[config.enabledKey] = enabled;
   clearResults();
   updateControls();
 }
@@ -135,7 +198,6 @@ function setImageLoaded(name) {
   elements.emptyState.classList.add("hidden");
   elements.workspace.classList.remove("hidden");
   elements.workspace.classList.add("flex");
-  elements.cutButton.disabled = false;
   elements.imageMeta.textContent = `${name} · ${state.naturalWidth} x ${state.naturalHeight}px`;
 
   resetMarkers();
@@ -168,19 +230,19 @@ function loadFile(file) {
   loadImageFromUrl(objectUrl, file.name, objectUrl);
 }
 
-function getPointerRatio(event) {
+function getPointerRatio(axis, event) {
   const rect = elements.sourceImage.getBoundingClientRect();
-  const pointerPosition = state.verticalCut ? event.clientY - rect.top : event.clientX - rect.left;
-  const axisLength = state.verticalCut ? rect.height : rect.width;
+  const pointerPosition = axis === "y" ? event.clientY - rect.top : event.clientX - rect.left;
+  const axisLength = axis === "y" ? rect.height : rect.width;
 
   return clamp(pointerPosition / axisLength, 0, 1);
 }
 
-function startDrag(which, event) {
+function startDrag(axis, which, event) {
   event.preventDefault();
-  state.dragging = which;
+  state.dragging = { axis, which };
   event.currentTarget.setPointerCapture(event.pointerId);
-  setMarker(which, getPointerRatio(event));
+  setAxisMarker(axis, which, getPointerRatio(axis, event));
 }
 
 function handleDrag(event) {
@@ -188,7 +250,7 @@ function handleDrag(event) {
     return;
   }
 
-  setMarker(state.dragging, getPointerRatio(event));
+  setAxisMarker(state.dragging.axis, state.dragging.which, getPointerRatio(state.dragging.axis, event));
 }
 
 function stopDrag(event) {
@@ -196,7 +258,8 @@ function stopDrag(event) {
     return;
   }
 
-  const marker = state.dragging === "a" ? elements.markerA : elements.markerB;
+  const config = axisConfig[state.dragging.axis];
+  const marker = state.dragging.which === "a" ? config.markerAElement : config.markerBElement;
 
   if (marker.hasPointerCapture?.(event.pointerId)) {
     marker.releasePointerCapture(event.pointerId);
@@ -205,7 +268,7 @@ function stopDrag(event) {
   state.dragging = null;
 }
 
-function moveMarkerWithKeyboard(which, event) {
+function moveMarkerWithKeyboard(axis, which, event) {
   const keyMap = {
     ArrowLeft: -0.01,
     ArrowRight: 0.01,
@@ -225,16 +288,35 @@ function moveMarkerWithKeyboard(which, event) {
   const step = event.shiftKey ? 0.05 : 0.01;
 
   if (movement === "start") {
-    setMarker(which, MIN_SEGMENT_RATIO);
+    setAxisMarker(axis, which, MIN_SEGMENT_RATIO);
   } else if (movement === "end") {
-    setMarker(which, 1 - MIN_SEGMENT_RATIO);
+    setAxisMarker(axis, which, 1 - MIN_SEGMENT_RATIO);
   } else {
-    const current = which === "a" ? state.markerA : state.markerB;
-    setMarker(which, current + movement * (step / 0.01));
+    const config = axisConfig[axis];
+    const current = state[which === "a" ? config.markerAKey : config.markerBKey];
+    setAxisMarker(axis, which, current + movement * (step / 0.01));
   }
 }
 
-function createCropCard(segment, index) {
+function getAxisSegments(axis) {
+  const config = axisConfig[axis];
+  const axisSize = getAxisSize(axis);
+
+  if (!state[config.enabledKey]) {
+    return [{ start: 0, size: axisSize, index: 1 }];
+  }
+
+  const cutA = Math.round(state[config.markerAKey] * axisSize);
+  const cutB = Math.round(state[config.markerBKey] * axisSize);
+
+  return [
+    { start: 0, size: cutA, index: 1 },
+    { start: cutA, size: cutB - cutA, index: 2 },
+    { start: cutB, size: axisSize - cutB, index: 3 },
+  ].filter((segment) => segment.size > 0);
+}
+
+function createCropCard(segment, index, modeName) {
   const canvas = document.createElement("canvas");
   canvas.width = segment.width;
   canvas.height = segment.height;
@@ -253,8 +335,7 @@ function createCropCard(segment, index) {
   );
 
   const dataUrl = canvas.toDataURL("image/png");
-  const axisName = state.verticalCut ? "vertical" : "horizontal";
-  const fileName = `${getBaseName(state.imageName)}-${axisName}-part-${index + 1}.png`;
+  const fileName = `${getBaseName(state.imageName)}-${modeName}-part-${index + 1}.png`;
   const article = document.createElement("article");
   article.className = "crop-card rounded-lg border border-neutral-200 bg-white shadow-sm";
 
@@ -289,30 +370,35 @@ function showSliceToast() {
   }, 3000);
 }
 
+function getModeName() {
+  if (state.horizontalCut && state.verticalCut) {
+    return "grid";
+  }
+
+  return state.horizontalCut ? "horizontal" : "vertical";
+}
+
 function cutImage() {
-  if (!state.naturalWidth || !state.naturalHeight) {
+  if (!state.naturalWidth || !state.naturalHeight || (!state.horizontalCut && !state.verticalCut)) {
     return;
   }
 
-  const activeSize = getActiveSize();
-  const cutA = Math.round(state.markerA * activeSize);
-  const cutB = Math.round(state.markerB * activeSize);
-  const segments = state.verticalCut
-    ? [
-        { x: 0, y: 0, width: state.naturalWidth, height: cutA },
-        { x: 0, y: cutA, width: state.naturalWidth, height: cutB - cutA },
-        { x: 0, y: cutB, width: state.naturalWidth, height: state.naturalHeight - cutB },
-      ].filter((segment) => segment.height > 0)
-    : [
-        { x: 0, y: 0, width: cutA, height: state.naturalHeight },
-        { x: cutA, y: 0, width: cutB - cutA, height: state.naturalHeight },
-        { x: cutB, y: 0, width: state.naturalWidth - cutB, height: state.naturalHeight },
-      ].filter((segment) => segment.width > 0);
+  const xSegments = getAxisSegments("x");
+  const ySegments = getAxisSegments("y");
+  const segments = ySegments.flatMap((ySegment) =>
+    xSegments.map((xSegment) => ({
+      x: xSegment.start,
+      y: ySegment.start,
+      width: xSegment.size,
+      height: ySegment.size,
+    })),
+  );
+  const modeName = getModeName();
 
-  elements.resultsScroll.replaceChildren(...segments.map(createCropCard));
+  elements.resultsScroll.replaceChildren(...segments.map((segment, index) => createCropCard(segment, index, modeName)));
   elements.resultsEmpty.classList.add("hidden");
   elements.resultsScroll.classList.remove("hidden");
-  elements.resultCount.textContent = `${segments.length} images`;
+  elements.resultCount.textContent = `${segments.length} ${segments.length === 1 ? "image" : "images"}`;
   elements.resultsScroll.scrollTo({ left: 0, behavior: "smooth" });
   showSliceToast();
 }
@@ -323,26 +409,31 @@ function handleDrop(event) {
   loadFile(event.dataTransfer.files?.[0]);
 }
 
+function bindAxisEvents(axis) {
+  const config = axisConfig[axis];
+
+  config.toggleElement.addEventListener("change", (event) => setAxisEnabled(axis, event.target.checked));
+  config.rangeAElement.addEventListener("input", (event) => setAxisMarker(axis, "a", Number(event.target.value) / 1000));
+  config.rangeBElement.addEventListener("input", (event) => setAxisMarker(axis, "b", Number(event.target.value) / 1000));
+  config.markerAElement.addEventListener("pointerdown", (event) => startDrag(axis, "a", event));
+  config.markerBElement.addEventListener("pointerdown", (event) => startDrag(axis, "b", event));
+  config.markerAElement.addEventListener("pointermove", handleDrag);
+  config.markerBElement.addEventListener("pointermove", handleDrag);
+  config.markerAElement.addEventListener("pointerup", stopDrag);
+  config.markerBElement.addEventListener("pointerup", stopDrag);
+  config.markerAElement.addEventListener("pointercancel", stopDrag);
+  config.markerBElement.addEventListener("pointercancel", stopDrag);
+  config.markerAElement.addEventListener("keydown", (event) => moveMarkerWithKeyboard(axis, "a", event));
+  config.markerBElement.addEventListener("keydown", (event) => moveMarkerWithKeyboard(axis, "b", event));
+}
+
 function bindEvents() {
   elements.fileInput.addEventListener("change", (event) => loadFile(event.target.files?.[0]));
   elements.loadExampleButton.addEventListener("click", () => loadImageFromUrl(EXAMPLE_IMAGE, "Gemini_Generated_Image_.png"));
   elements.resetButton.addEventListener("click", resetMarkers);
   elements.cutButton.addEventListener("click", cutImage);
-  elements.verticalCutToggle.addEventListener("change", (event) => setCutAxis(event.target.checked));
-
-  elements.rangeA.addEventListener("input", (event) => setMarker("a", Number(event.target.value) / 1000));
-  elements.rangeB.addEventListener("input", (event) => setMarker("b", Number(event.target.value) / 1000));
-
-  elements.markerA.addEventListener("pointerdown", (event) => startDrag("a", event));
-  elements.markerB.addEventListener("pointerdown", (event) => startDrag("b", event));
-  elements.markerA.addEventListener("pointermove", handleDrag);
-  elements.markerB.addEventListener("pointermove", handleDrag);
-  elements.markerA.addEventListener("pointerup", stopDrag);
-  elements.markerB.addEventListener("pointerup", stopDrag);
-  elements.markerA.addEventListener("pointercancel", stopDrag);
-  elements.markerB.addEventListener("pointercancel", stopDrag);
-  elements.markerA.addEventListener("keydown", (event) => moveMarkerWithKeyboard("a", event));
-  elements.markerB.addEventListener("keydown", (event) => moveMarkerWithKeyboard("b", event));
+  bindAxisEvents("x");
+  bindAxisEvents("y");
 
   ["dragenter", "dragover"].forEach((eventName) => {
     elements.dropZone.addEventListener(eventName, (event) => {
@@ -363,4 +454,5 @@ function bindEvents() {
 }
 
 bindEvents();
+updateControls();
 loadImageFromUrl(EXAMPLE_IMAGE, "Gemini_Generated_Image_.png");

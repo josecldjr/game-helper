@@ -1,7 +1,7 @@
 {
   "name": "Model Sheet Cutter",
   "short_name": "Sheet Cutter",
-  "description": "Slice a model sheet into three downloadable PNG images with adjustable horizontal or vertical markers.",
+  "description": "Slice a model sheet into downloadable PNG images with adjustable markers on one or both axes.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
