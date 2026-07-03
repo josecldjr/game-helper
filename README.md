@@ -5,7 +5,8 @@ A small static tool for slicing a horizontal model sheet into three PNG images.
 ## Features
 
 - Load an image by drag and drop or file picker.
-- Move two horizontal cut markers over the image.
+- Move two cut markers over the image.
+- Toggle vertical cut mode when the model sheet should be split top to bottom.
 - Generate three PNG slices into horizontally scrollable cards.
 - Download each slice as a PNG.
 - Non-blocking side notification after slicing.

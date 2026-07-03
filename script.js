@@ -16,6 +16,7 @@ const elements = {
   markerB: document.querySelector("#markerB"),
   rangeA: document.querySelector("#rangeA"),
   rangeB: document.querySelector("#rangeB"),
+  verticalCutToggle: document.querySelector("#verticalCutToggle"),
   markerReadout: document.querySelector("#markerReadout"),
   resultsEmpty: document.querySelector("#resultsEmpty"),
   resultsScroll: document.querySelector("#resultsScroll"),
@@ -31,6 +32,7 @@ const state = {
   naturalHeight: 0,
   markerA: 1 / 3,
   markerB: 2 / 3,
+  verticalCut: false,
   dragging: null,
   toastTimer: 0,
 };
@@ -47,6 +49,10 @@ function getBaseName(fileName) {
   return fileName.replace(/\.[^.]+$/, "").replace(/[^\w-]+/g, "-").replace(/^-+|-+$/g, "") || "slice";
 }
 
+function getActiveSize() {
+  return state.verticalCut ? state.naturalHeight : state.naturalWidth;
+}
+
 function normalizeMarker(which, rawValue) {
   const value = clamp(rawValue, MIN_SEGMENT_RATIO, 1 - MIN_SEGMENT_RATIO);
 
@@ -60,16 +66,32 @@ function normalizeMarker(which, rawValue) {
 function updateControls() {
   const markerAPercent = formatPercent(state.markerA);
   const markerBPercent = formatPercent(state.markerB);
-  const markerAPx = Math.round(state.markerA * state.naturalWidth);
-  const markerBPx = Math.round(state.markerB * state.naturalWidth);
+  const activeSize = getActiveSize();
+  const markerAPx = Math.round(state.markerA * activeSize);
+  const markerBPx = Math.round(state.markerB * activeSize);
+  const axisLabel = state.verticalCut ? "Y" : "X";
 
-  elements.markerA.style.left = markerAPercent;
-  elements.markerB.style.left = markerBPercent;
+  elements.imageFrame.classList.toggle("is-vertical-cut", state.verticalCut);
+
+  if (state.verticalCut) {
+    elements.markerA.style.left = "";
+    elements.markerB.style.left = "";
+    elements.markerA.style.top = markerAPercent;
+    elements.markerB.style.top = markerBPercent;
+  } else {
+    elements.markerA.style.top = "";
+    elements.markerB.style.top = "";
+    elements.markerA.style.left = markerAPercent;
+    elements.markerB.style.left = markerBPercent;
+  }
+
   elements.rangeA.value = Math.round(state.markerA * 1000);
   elements.rangeB.value = Math.round(state.markerB * 1000);
   elements.markerA.setAttribute("aria-valuenow", Math.round(state.markerA * 100));
   elements.markerB.setAttribute("aria-valuenow", Math.round(state.markerB * 100));
-  elements.markerReadout.textContent = `A: ${markerAPercent} (${markerAPx}px) · B: ${markerBPercent} (${markerBPx}px)`;
+  elements.markerA.setAttribute("aria-orientation", state.verticalCut ? "vertical" : "horizontal");
+  elements.markerB.setAttribute("aria-orientation", state.verticalCut ? "vertical" : "horizontal");
+  elements.markerReadout.textContent = `${axisLabel} A: ${markerAPercent} (${markerAPx}px) · ${axisLabel} B: ${markerBPercent} (${markerBPx}px)`;
 }
 
 function setMarker(which, value) {
@@ -89,6 +111,12 @@ function setMarker(which, value) {
 function resetMarkers() {
   state.markerA = 1 / 3;
   state.markerB = 2 / 3;
+  updateControls();
+}
+
+function setCutAxis(verticalCut) {
+  state.verticalCut = verticalCut;
+  clearResults();
   updateControls();
 }
 
@@ -142,7 +170,10 @@ function loadFile(file) {
 
 function getPointerRatio(event) {
   const rect = elements.sourceImage.getBoundingClientRect();
-  return clamp((event.clientX - rect.left) / rect.width, 0, 1);
+  const pointerPosition = state.verticalCut ? event.clientY - rect.top : event.clientX - rect.left;
+  const axisLength = state.verticalCut ? rect.height : rect.width;
+
+  return clamp(pointerPosition / axisLength, 0, 1);
 }
 
 function startDrag(which, event) {
@@ -178,6 +209,8 @@ function moveMarkerWithKeyboard(which, event) {
   const keyMap = {
     ArrowLeft: -0.01,
     ArrowRight: 0.01,
+    ArrowUp: -0.01,
+    ArrowDown: 0.01,
     Home: "start",
     End: "end",
   };
@@ -204,23 +237,24 @@ function moveMarkerWithKeyboard(which, event) {
 function createCropCard(segment, index) {
   const canvas = document.createElement("canvas");
   canvas.width = segment.width;
-  canvas.height = state.naturalHeight;
+  canvas.height = segment.height;
 
   const context = canvas.getContext("2d");
   context.drawImage(
     elements.sourceImage,
     segment.x,
+    segment.y,
+    segment.width,
+    segment.height,
+    0,
     0,
     segment.width,
-    state.naturalHeight,
-    0,
-    0,
-    segment.width,
-    state.naturalHeight,
+    segment.height,
   );
 
   const dataUrl = canvas.toDataURL("image/png");
-  const fileName = `${getBaseName(state.imageName)}-part-${index + 1}.png`;
+  const axisName = state.verticalCut ? "vertical" : "horizontal";
+  const fileName = `${getBaseName(state.imageName)}-${axisName}-part-${index + 1}.png`;
   const article = document.createElement("article");
   article.className = "crop-card rounded-lg border border-neutral-200 bg-white shadow-sm";
 
@@ -231,7 +265,7 @@ function createCropCard(segment, index) {
     <div class="grid gap-3 border-t border-neutral-200 p-3">
       <div>
         <h3 class="text-sm font-semibold text-neutral-950">Part ${index + 1}</h3>
-        <p class="text-xs text-neutral-500">${segment.width} x ${state.naturalHeight}px</p>
+        <p class="text-xs text-neutral-500">${segment.width} x ${segment.height}px</p>
       </div>
       <a
         class="inline-flex h-9 items-center justify-center rounded-md border border-neutral-300 bg-white px-3 text-sm font-medium text-neutral-900 transition hover:bg-neutral-50 focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-neutral-500"
@@ -260,13 +294,20 @@ function cutImage() {
     return;
   }
 
-  const cutA = Math.round(state.markerA * state.naturalWidth);
-  const cutB = Math.round(state.markerB * state.naturalWidth);
-  const segments = [
-    { x: 0, width: cutA },
-    { x: cutA, width: cutB - cutA },
-    { x: cutB, width: state.naturalWidth - cutB },
-  ].filter((segment) => segment.width > 0);
+  const activeSize = getActiveSize();
+  const cutA = Math.round(state.markerA * activeSize);
+  const cutB = Math.round(state.markerB * activeSize);
+  const segments = state.verticalCut
+    ? [
+        { x: 0, y: 0, width: state.naturalWidth, height: cutA },
+        { x: 0, y: cutA, width: state.naturalWidth, height: cutB - cutA },
+        { x: 0, y: cutB, width: state.naturalWidth, height: state.naturalHeight - cutB },
+      ].filter((segment) => segment.height > 0)
+    : [
+        { x: 0, y: 0, width: cutA, height: state.naturalHeight },
+        { x: cutA, y: 0, width: cutB - cutA, height: state.naturalHeight },
+        { x: cutB, y: 0, width: state.naturalWidth - cutB, height: state.naturalHeight },
+      ].filter((segment) => segment.width > 0);
 
   elements.resultsScroll.replaceChildren(...segments.map(createCropCard));
   elements.resultsEmpty.classList.add("hidden");
@@ -287,6 +328,7 @@ function bindEvents() {
   elements.loadExampleButton.addEventListener("click", () => loadImageFromUrl(EXAMPLE_IMAGE, "Gemini_Generated_Image_.png"));
   elements.resetButton.addEventListener("click", resetMarkers);
   elements.cutButton.addEventListener("click", cutImage);
+  elements.verticalCutToggle.addEventListener("change", (event) => setCutAxis(event.target.checked));
 
   elements.rangeA.addEventListener("input", (event) => setMarker("a", Number(event.target.value) / 1000));
   elements.rangeB.addEventListener("input", (event) => setMarker("b", Number(event.target.value) / 1000));

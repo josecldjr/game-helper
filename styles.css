@@ -93,6 +93,31 @@ body {
   --marker-color: rgb(217 119 6);
 }
 
+.image-frame.is-vertical-cut .marker {
+  inset-inline: 0;
+  bottom: auto;
+  width: auto;
+  height: 2.75rem;
+  transform: translateY(-50%);
+  cursor: ns-resize;
+}
+
+.image-frame.is-vertical-cut .marker::before {
+  inset-inline: 0;
+  inset-block: auto;
+  top: 50%;
+  left: 0;
+  width: auto;
+  height: 3px;
+  transform: translateY(-50%);
+}
+
+.image-frame.is-vertical-cut .marker span {
+  top: 50%;
+  left: 0.75rem;
+  transform: translateY(-50%);
+}
+
 .is-dragging {
   border-color: rgb(8 145 178);
   background: rgb(236 254 255);

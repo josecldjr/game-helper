@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Slice a horizontal model sheet into three downloadable PNG images with adjustable markers." />
+    <meta name="description" content="Slice a model sheet into three downloadable PNG images with adjustable horizontal or vertical markers." />
     <meta name="application-name" content="Model Sheet Cutter" />
     <meta name="author" content="Jose Carvalho" />
     <meta name="robots" content="index, follow" />
@@ -13,13 +13,13 @@
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Model Sheet Cutter" />
     <meta property="og:title" content="Model Sheet Cutter" />
-    <meta property="og:description" content="Slice a horizontal model sheet into three downloadable PNG images with adjustable markers." />
+    <meta property="og:description" content="Slice a model sheet into three downloadable PNG images with adjustable horizontal or vertical markers." />
     <meta property="og:url" content="https://game-helper.ne-xxi.com/" />
     <meta property="og:image" content="https://game-helper.ne-xxi.com/Gemini_Generated_Image_.png" />
 
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Model Sheet Cutter" />
-    <meta name="twitter:description" content="Slice a horizontal model sheet into three downloadable PNG images with adjustable markers." />
+    <meta name="twitter:description" content="Slice a model sheet into three downloadable PNG images with adjustable horizontal or vertical markers." />
     <meta name="twitter:image" content="https://game-helper.ne-xxi.com/Gemini_Generated_Image_.png" />
 
     <title>Model Sheet Cutter</title>
@@ -28,7 +28,7 @@
     <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
     <link rel="manifest" href="./site.webmanifest" />
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="./styles.css?v=2" />
+    <link rel="stylesheet" href="./styles.css?v=3" />
   </head>
   <body class="min-h-screen bg-neutral-100 text-neutral-950">
     <main class="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-5 px-4 py-5 sm:px-6 lg:px-8">
@@ -115,7 +115,12 @@
             </div>
           </div>
 
-          <div class="grid gap-3 rounded-lg border border-neutral-200 bg-neutral-50 p-3 md:grid-cols-[1fr_1fr_auto] md:items-end">
+          <div class="grid gap-3 rounded-lg border border-neutral-200 bg-neutral-50 p-3 md:grid-cols-[auto_1fr_1fr_auto] md:items-end">
+            <label class="flex min-h-11 items-center gap-3 rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm font-medium text-neutral-700">
+              <input id="verticalCutToggle" class="h-4 w-4 accent-emerald-700" type="checkbox" />
+              Vertical cut
+            </label>
+
             <label class="grid gap-2 text-sm font-medium text-neutral-700">
               Marker A
               <input id="rangeA" class="accent-cyan-700" type="range" min="0" max="1000" step="1" value="333" />
@@ -149,6 +154,6 @@
 
     <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true">Image sliced</div>
 
-    <script src="./script.js"></script>
+    <script src="./script.js?v=2"></script>
   </body>
 </html>
